@@ -2,20 +2,20 @@ name: Deployment
 on:
   push:
     branches:
-      - master
+      - main
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - name: Get code
         uses: actions/checkout@v3
-      - name: Load & Cache Dependencies
+      - name: Load & cache dependencies
         id: cache-deps
-        uses: ./.github/actions/cached-deps 
+        uses: ./.github/actions/cached-deps
         with:
           caching: 'false'
       - name: Output information
-        run: echo "Cache used? ${{ steps.cache-deps.outputs.used-cache }}"   
+        run: echo "Cache used? ${{ steps.cache-deps.outputs.used-cache }}"
       - name: Lint code
         run: npm run lint
   test:
@@ -23,14 +23,14 @@ jobs:
     steps:
       - name: Get code
         uses: actions/checkout@v3
-      - name: Load & Cache Dependencies
-        uses: ./.github/actions/cached-deps 
+      - name: Load & cache dependencies
+        uses: ./.github/actions/cached-deps
       - name: Test code
         id: run-tests
         run: npm run test
       - name: Upload test report
         if: failure() && steps.run-tests.outcome == 'failure'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: test-report
           path: test.json
@@ -40,12 +40,12 @@ jobs:
     steps:
       - name: Get code
         uses: actions/checkout@v3
-      - name: Load & Cache Dependencies
-        uses: ./.github/actions/cached-deps 
+      - name: Load & cache dependencies
+        uses: ./.github/actions/cached-deps
       - name: Build website
         run: npm run build
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: dist-files
           path: dist
@@ -56,7 +56,7 @@ jobs:
       - name: Get code
         uses: actions/checkout@v3
       - name: Get build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
         with:
           name: dist-files
           path: ./dist
@@ -64,14 +64,14 @@ jobs:
         run: ls
       - name: Deploy site
         id: deploy
-        uses: ./.github/actions/deploy-s3-docker
+        uses: ./.github/actions/deploy-s3-javascript
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         with:
           bucket: gha-custom-action-hosting
           dist-folder: ./dist
-          # bucket-region: us-east-2 (no caso de ser outra regiao do que esta no action)
+          # bucket-region: us-east-2
       - name: Output information
-        run:
-          echo "Live URL: ${{ setps.deploy.outputs.website-url }}"
+        run: |
+          echo "Live URL: ${{ steps.deploy.outputs.website-url }}"
